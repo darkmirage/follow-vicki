@@ -9,100 +9,50 @@ const authedClient = new Gdax.AuthenticatedClient(
   config.gdax.url,
 );
 
+// Customize the pairs to listen for
 const VICKI_PAIRS = ['ZECUSD', 'XMRBTC', 'ETHBTC', 'ETHUSD'];
-const MAX_USD = 1000;
-const MAX_TRADE_SIZE = 10;
 
-function cancelAllOrders(productID) {
-  return new Promise((resolve, reject) => {
-    authedClient.cancelAllOrders({product_id: productID}, (err, response, data) => {
-      if (err) reject(err);
-      resolve(data);
-    });
-  });
-}
-
-function getProductOrderBook(productID, level) {
-  const publicClient = new Gdax.PublicClient(productID);
-  return new Promise((resolve, reject) => {
-    publicClient.getProductOrderBook({ level }, (err, response, data) => {
-      if (err) reject(err);
-      resolve(data);
-    });
-  });
-}
-
-function buy(productID, price, size) {
-  const params = {
-    'price': `${price}`,
-    'size': `${size}`,
-    'product_id': productID,
-  }
-  return new Promise((resolve, reject) => {
-    authedClient.buy(params, (err, response, data) => {
-      if (err) reject(err);
-      resolve(data);
-    });
-  });
-}
-
-function sell(productID, price, size) {
-  const params = {
-    'price': `${price}`,
-    'size': `${size}`,
-    'product_id': productID,
-  }
-  return new Promise((resolve, reject) => {
-    authedClient.sell(params, (err, response, data) => {
-      if (err) reject(err);
-      resolve(data);
-    });
-  });
-}
-
-function getPriceAtVolume(prices, targetVolume) {
-  let i = 0;
-  let volume = 0;
-  for (i = 0; i < bids.length; i++) {
-    const size = parseFloat(bids[i][1]);
-    if (volume + size > targetVolume) {
-      break;
-    }
-    volume += size;
-  }
-  return parseFloat(bids[i][0]);
-}
-
-function getSizeAtPrice(price) {
-  return Math.min(MAX_TRADE_SIZE, MAX_USD / price);
-}
+// Set the fixed transaction size here or you can implement more logic in the
+// callback functions below to dynamically determine the size
+const TRADE_SIZE = 0.01;
 
 const follower = new Follower(config, VICKI_PAIRS);
 
 follower.onTweet('ETHUSD', 'long', function() {
-  cancelAllOrders('ETH-USD').then(data => {
-    return getProductOrderBook('ETH-USD', 2);
-  }).then(data => {
+  // Customize this function and perform actions using the GDAX client
+  const publicClient = new Gdax.PublicClient('ETH-USD');
+  publicClient.getProductOrderBook({ level: 2 }, (err, response, data) => {
     const {bids} = data;
-    const price = getPriceAtVolume(bids, 10);
-    const size = getSizeAtPrice(price);
-    return buy('ETH-USD', price, size);
-  }).then(data => {
-    console.log(data);
+    const price = bids[0][0];
+    const params = {
+      'price': price,
+      'size': TRADE_SIZE,
+      'product_id': 'ETH-USD',
+    };
+    authedClient.buy(params, (err, response, data) => {
+      console.log('Sent buy order', data);
+    });
   });
 });
 
 follower.onTweet('ETHUSD', 'short', function() {
-  cancelAllOrders('ETH-USD').then(data => {
-    return getProductOrderBook('ETH-USD', 2);
-  }).then(data => {
-    const {bids} = data;
-    const price = getPriceAtVolume(bids, 10);
-    const size = getSizeAtPrice(price);
-    return buy('ETH-USD', price, size);
-  }).then(data => {
-    console.log(data);
+  const publicClient = new Gdax.PublicClient('ETH-USD');
+  publicClient.getProductOrderBook({ level: 2 }, (err, response, data) => {
+    const {asks} = data;
+    const price = asks[0][0];
+    const params = {
+      'price': price,
+      'size': TRADE_SIZE,
+      'product_id': 'ETH-USD',
+    };
+    authedClient.sell(params, (err, response, data) => {
+      console.log('Sent sell order', data);
+    });
   });
+});
+
+follower.onTweet('XMRBTC', 'short', function() {
+  // You can listen on any of the pairs in VICKI_PAIRS and trade with other APIs
 });
 
 follower.startFollowing();

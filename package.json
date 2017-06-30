@@ -4,7 +4,7 @@
   "description": "Execute trades on GDAX based on Vicki's tweets",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node follow.js"
   },
   "author": "Raven Jiang",
   "license": "ISC",

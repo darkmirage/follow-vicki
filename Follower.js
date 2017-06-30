@@ -11,11 +11,11 @@ class Follower extends EventEmitter {
   }
 
   onTweet(pair, direction, callback) {
-    return this.on(`${pair} - ${direction}`, callback);
+    return this.on(`${pair}/${direction}`, callback);
   }
 
   startFollowing() {
-    const params = { follow: '834940874643615744,880640853181513728' };
+    const params = { follow: '834940874643615744' };
     const stream = this.twitter.stream('statuses/filter', params);
     stream.on('data', tweet => {
       if (!tweet) {
@@ -43,7 +43,7 @@ class Follower extends EventEmitter {
         return;
       }
 
-      this.emit(`${pair} - ${direction}`);
+      this.emit(`${pair}/${direction}`);
 
       console.log(colors.gray(tweet.created_at));
       console.log(text);

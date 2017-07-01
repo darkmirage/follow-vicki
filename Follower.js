@@ -3,6 +3,9 @@ const Twitter = require('twitter');
 
 const colors = require('colors/safe');
 
+// Vicki's Twitter ID
+const ID = '834940874643615744';
+
 class Follower extends EventEmitter {
   constructor(config, pairs) {
     super();
@@ -15,10 +18,10 @@ class Follower extends EventEmitter {
   }
 
   startFollowing() {
-    const params = { follow: '834940874643615744' };
+    const params = { follow: ID };
     const stream = this.twitter.stream('statuses/filter', params);
     stream.on('data', tweet => {
-      if (!tweet) {
+      if (!tweet || tweet.user.id_str != ID) {
         return;
       }
 
